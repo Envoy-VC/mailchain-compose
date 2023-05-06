@@ -2,7 +2,6 @@ import React from 'react';
 
 interface Props {
 	fill?: string;
-	filled?: boolean;
 	size?: string;
 	height?: number;
 	width?: number;
@@ -15,9 +14,8 @@ const Preview = (props: Props) => {
 			width={props.size || props.width || 24}
 			height={props.size || props.height || 24}
 			viewBox='0 0 52 52'
-			fill={props.filled ? props.fill : 'none'}
+			fill={props.fill}
 			xmlns='http://www.w3.org/2000/svg'
-			{...props}
 		>
 			<path
 				d='M51.8,25.1C47.1,15.6,37.3,9,26,9S4.9,15.6,0.2,25.1c-0.3,0.6-0.3,1.3,0,1.8C4.9,36.4,14.7,43,26,43

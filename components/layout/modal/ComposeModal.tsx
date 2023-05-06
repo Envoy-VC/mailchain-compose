@@ -9,44 +9,55 @@ import {
 	Button,
 	Spacer,
 	FormElement,
+	Loading,
 } from '@nextui-org/react';
 import Image from 'next/image';
-
+import { PROPOSAL_DETAILS } from '@/utils/graphql';
+import { useQuery } from '@apollo/client/react';
 import { Attachment, Preview } from '@/components/layout/icons';
 import mailbox from '@/assets/icons/mailbox.svg';
+import { ModalState } from '@/types/modal';
+import { FormProps } from './EmailModal';
 
 interface Props {
-	visible: boolean;
-	setVisible: Function;
-}
-
-interface FormProps {
-	from: string;
-	proposalId: string;
-	subject: string;
-	body: string;
-	attachment?: Buffer;
+	state: ModalState;
+	setState: React.Dispatch<React.SetStateAction<ModalState>>;
+	form: FormProps;
+	data: any;
+	error: React.MutableRefObject<string>;
 }
 
 const ComposeModal = (props: Props) => {
-	const [form, setForm] = React.useState<FormProps>({
-		from: '',
-		proposalId: '',
-		subject: '',
-		body: '',
+	const { refetch } = useQuery(PROPOSAL_DETAILS, {
+		variables: { proposalId: props.form.proposalId },
+		fetchPolicy: 'network-only',
 	});
-
-	const closeHandler = () => {
-		props.setVisible(false);
+	const [isLoading, setIsLoading] = React.useState<boolean>(false);
+	const handleSubmit = async () => {
+		try {
+			setIsLoading(true);
+			console.log(props.form.proposalId);
+			await refetch({ proposalId: props.form.proposalId })
+				.then((res) => {
+					if (res.data?.proposal !== null) {
+						props.data.current = res.data?.proposal;
+					} else {
+						throw new Error('Proposal not found');
+					}
+				})
+				.catch((error) => {
+					throw new Error(error.message);
+				});
+			props.setState('preview');
+		} catch (error: any) {
+			props.error.current = error.toString().slice(6) as string;
+			props.setState('error');
+		} finally {
+			setIsLoading(false);
+		}
 	};
 	return (
-		<Modal
-			closeButton
-			aria-labelledby='modal-title'
-			open={props.visible}
-			onClose={closeHandler}
-			width='90vw'
-		>
+		<div>
 			<Modal.Header justify='flex-start' autoMargin={false}>
 				<Row className='items-center'>
 					<Image
@@ -62,89 +73,108 @@ const ComposeModal = (props: Props) => {
 				</Row>
 			</Modal.Header>
 			<Modal.Body autoMargin={false} className='justify-start'>
-				<Grid.Container direction='column' className='gap-[8px]'>
-					<Grid>
-						<Input
-							aria-label='From'
-							labelLeft={<div className='min-w-[84px]'>From</div>}
-							placeholder='vitalik.eth@ens.mailchain.com'
-							width='100%'
-							className=''
-							type='text'
-							required
-							animated={false}
-							onChange={(e: React.ChangeEvent<FormElement>) =>
-								setForm({ ...form, from: e.target.value })
-							}
-						/>
-					</Grid>
-					<Grid>
-						<Input
-							aria-label='Proposal ID'
-							labelLeft={<div className='min-w-[84px]'>Proposal ID</div>}
-							placeholder='0x5e79db7...e4dd5c9'
-							width='100%'
-							required
-							animated={false}
-							onChange={(e: React.ChangeEvent<FormElement>) =>
-								setForm({ ...form, proposalId: e.target.value })
-							}
-						/>
-					</Grid>
-				</Grid.Container>
+				<form
+					onSubmit={async (e) => {
+						e.preventDefault();
+						handleSubmit();
+					}}
+				>
+					<Grid.Container direction='column' className='gap-[8px]'>
+						<Grid>
+							<Input
+								aria-label='From'
+								labelLeft={<div className='min-w-[84px]'>From</div>}
+								placeholder='vitalik.eth@ens.mailchain.com'
+								width='100%'
+								initialValue={props.form.from ? props.form.from : ''}
+								type='text'
+								required={true}
+								animated={false}
+								onChange={(e: React.ChangeEvent<FormElement>) =>
+									(props.form.from = e.target.value)
+								}
+							/>
+						</Grid>
+						<Grid>
+							<Input
+								aria-label='Proposal ID'
+								labelLeft={<div className='min-w-[84px]'>Proposal ID</div>}
+								placeholder='0x5e79db7...e4dd5c9'
+								width='100%'
+								initialValue={
+									props.form.proposalId ? props.form.proposalId : ''
+								}
+								required={true}
+								animated={false}
+								onChange={(e: React.ChangeEvent<FormElement>) =>
+									(props.form.proposalId = e.target.value)
+								}
+							/>
+						</Grid>
+					</Grid.Container>
 
-				<Grid.Container direction='column'>
-					<Grid>
-						<Input
-							aria-label='Subject'
-							width='100%'
-							placeholder='Subject for your proposal'
-							size='xl'
-							underlined
+					<Grid.Container direction='column'>
+						<Grid>
+							<Input
+								aria-label='Subject'
+								width='100%'
+								placeholder='Subject for your proposal'
+								size='xl'
+								required={true}
+								initialValue={props.form.subject ? props.form.subject : ''}
+								underlined
+								color='secondary'
+								rounded={false}
+								onChange={(e: React.ChangeEvent<FormElement>) =>
+									(props.form.subject = e.target.value)
+								}
+							/>
+						</Grid>
+						<Spacer y={1} />
+						<Grid>
+							<Textarea
+								aria-label='Body'
+								className='border-2 border-[#393A3C]'
+								placeholder='Share your proposal with the DAO members.'
+								width='100%'
+								required={true}
+								initialValue={props.form.body ? props.form.body : ''}
+								rows={16}
+								size='lg'
+								onChange={(e: React.ChangeEvent<FormElement>) =>
+									(props.form.body = e.target.value)
+								}
+							/>
+						</Grid>
+						<Spacer y={1} />
+					</Grid.Container>
+					<Grid.Container className='flex flex-col md:flex-row justify-between gap-2'>
+						<Button
+							auto
+							bordered
 							color='secondary'
-							rounded={false}
-							onChange={(e: React.ChangeEvent<FormElement>) =>
-								setForm({ ...form, subject: e.target.value })
-							}
+							size='md'
+							icon={<Attachment fill='#9750DD' />}
 						/>
-					</Grid>
-					<Spacer y={1} />
-					<Grid>
-						<Textarea
-							aria-label='Body'
-							className='border-2 border-[#393A3C]'
-							placeholder='Share your proposal with the DAO members.'
-							width='100%'
-							rows={16}
+						<Button
+							disabled={isLoading}
+							type='submit'
+							auto
+							color='primary'
 							size='lg'
-							onChange={(e: React.ChangeEvent<FormElement>) =>
-								setForm({ ...form, body: e.target.value })
-							}
-						/>
-					</Grid>
-					<Spacer y={1} />
-				</Grid.Container>
-				<Grid.Container className='flex flex-col md:flex-row justify-between gap-2'>
-					<Button
-						auto
-						bordered
-						color='secondary'
-						size='md'
-						icon={<Attachment fill='#9750DD' filled />}
-					/>
-					<Button
-						auto
-						color='primary'
-						size='lg'
-						icon={<Preview fill='#d6d6d6' filled />}
-						iconRight={null}
-						onClick={() => console.log(form)}
-					>
-						Preview Email
-					</Button>
-				</Grid.Container>
+							icon={isLoading ? null : <Preview fill='#d6d6d6' />}
+							iconRight={null}
+						>
+							{isLoading ? (
+								<Loading color='currentColor' size='sm' />
+							) : (
+								'Preview Email'
+							)}
+						</Button>
+					</Grid.Container>
+				</form>
 			</Modal.Body>
-		</Modal>
+		</div>
 	);
 };
 

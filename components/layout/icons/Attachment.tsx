@@ -2,7 +2,6 @@ import React from 'react';
 
 interface Props {
 	fill?: string;
-	filled?: boolean;
 	size?: string;
 	height?: number;
 	width?: number;
@@ -15,7 +14,8 @@ const Attachment = (props: Props) => {
 			width={props.size || props.width || 24}
 			height={props.size || props.height || 24}
 			viewBox='0 0 24 24'
-			fill={props.filled ? props.fill : 'none'}
+			
+			fill={props.fill}
 			xmlns='http://www.w3.org/2000/svg'
 			{...props}
 		>
