@@ -155,8 +155,10 @@ const PreviewModal = (props: Props) => {
 					</Text>
 				</Row>
 			</Modal.Header>
-			<Modal.Body autoMargin={true} className='justify-start'>
-				<NewProposalEmail {...emailData} />
+			<Modal.Body>
+				<div className='w-full flex justify-center bg-white'>
+					<NewProposalEmail {...emailData} />
+				</div>
 			</Modal.Body>
 			<Modal.Footer>
 				<Grid.Container className='flex justify-between'>

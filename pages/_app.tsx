@@ -12,7 +12,7 @@ import {
 } from '@thirdweb-dev/react';
 
 const client = new ApolloClient({
-	uri: 'https://hub.snapshot.org/graphql',
+	uri: 'https://testnet.snapshot.org/graphql',
 	cache: new InMemoryCache(),
 	headers: {
 		'Access-Control-Allow-Origin': '*',
