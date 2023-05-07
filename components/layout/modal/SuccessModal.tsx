@@ -4,6 +4,7 @@ import { ModalState } from '@/types/modal';
 import successIcon from '@/assets/icons/success.svg';
 
 interface Props {
+	setState: React.Dispatch<React.SetStateAction<ModalState>>;
 	setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
@@ -36,9 +37,12 @@ const SuccessModal = (props: Props) => {
 					iconRight={null}
 					onClick={() => {
 						props.setOpen(false);
+						setTimeout(() => {
+							props.setState('compose');
+						}, 500);
 					}}
 				>
-					Dome
+					Done
 				</Button>
 			</Modal.Footer>
 		</div>

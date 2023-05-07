@@ -72,7 +72,7 @@ const PreviewModal = (props: Props) => {
 	};
 
 	const sendEmail = async (addressList: string[], from: string) => {
-		const response = await fetch('/api/test', {
+		const response = await fetch('/api/send', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
@@ -81,6 +81,7 @@ const PreviewModal = (props: Props) => {
 				subject: props.form?.subject,
 				contentText: `New Proposal Alert: ${props.data?.title}`,
 				contentHtml: html,
+				attachment: [props.form.attachment],
 			}),
 		});
 		const data = await response.json();
@@ -104,7 +105,7 @@ const PreviewModal = (props: Props) => {
 			} else {
 				resolvedAddress = props.form.from;
 			}
-			if (recoveredAddress !== address || recoveredAddress !== resolvedAddress)
+			if (recoveredAddress !== address)
 				throw new Error('Unable to Verify Wallet');
 			if (ROLE !== 'any') {
 				const isValid = await validate(recoveredAddress);
@@ -127,7 +128,7 @@ const PreviewModal = (props: Props) => {
 					.then(async (res) => {
 						if (res.data?.follows) {
 							res.data?.follows.map((follow: { follower: string }) => {
-								addressList.push(follow.follower);
+								addressList.push(`${follow.follower}@ethereum.mailchain.com`);
 							});
 						}
 					})

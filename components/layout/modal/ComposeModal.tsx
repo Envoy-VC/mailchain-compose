@@ -12,9 +12,11 @@ import {
 	Loading,
 } from '@nextui-org/react';
 import Image from 'next/image';
+const Hash = require('ipfs-only-hash');
+
 import { PROPOSAL_DETAILS } from '@/utils/graphql';
 import { useQuery } from '@apollo/client/react';
-import { Attachment, Preview } from '@/components/layout/icons';
+import { Preview } from '@/components/layout/icons';
 import mailbox from '@/assets/icons/mailbox.svg';
 import { ModalState } from '@/types/modal';
 import { FormProps } from './EmailModal';
@@ -32,11 +34,33 @@ const ComposeModal = (props: Props) => {
 		variables: { proposalId: props.form.proposalId },
 		fetchPolicy: 'network-only',
 	});
+
 	const [isLoading, setIsLoading] = React.useState<boolean>(false);
+
+	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		if (e.target.files) {
+			const fileDetails = e.target.files[0];
+			const reader = new FileReader();
+			reader.onloadend = async () => {
+				const endOfPrefix = reader.result?.toString().indexOf(',');
+				const cleanStrData = reader.result?.toString().slice(endOfPrefix! + 1);
+				const data = Buffer.from(cleanStrData!, 'base64');
+				const hash = await Hash.of(data);
+				const fileBuffer = Buffer.from(reader.result as any, 'base64');
+				props.form.attachment = {
+					cid: hash,
+					name: fileDetails.name,
+					content: fileBuffer,
+				};
+				console.log(props.form.attachment);
+			};
+			reader.readAsDataURL(e.target.files[0]);
+		}
+	};
+
 	const handleSubmit = async () => {
 		try {
 			setIsLoading(true);
-			console.log(props.form.proposalId);
 			await refetch({ proposalId: props.form.proposalId })
 				.then((res) => {
 					if (res.data?.proposal !== null) {
@@ -148,13 +172,12 @@ const ComposeModal = (props: Props) => {
 						</Grid>
 						<Spacer y={1} />
 					</Grid.Container>
-					<Grid.Container className='flex flex-col md:flex-row justify-between gap-2'>
-						<Button
-							auto
-							bordered
-							color='secondary'
-							size='md'
-							icon={<Attachment fill='#9750DD' />}
+					<Grid.Container className='flex flex-col md:flex-row justify-between gap-2 my-4'>
+						<input
+							id='file-input'
+							type='file'
+							className='block text-sm file:mr-4 file:rounded-md file:border-0 file:bg-[#9750DD] file:py-2.5 file:px-4 file:text-sm file:font-semibold file:text-white hover:file:bg-primary-700 focus:outline-none disabled:pointer-events-none disabled:opacity-60'
+							onChange={handleFileChange}
 						/>
 						<Button
 							disabled={isLoading}

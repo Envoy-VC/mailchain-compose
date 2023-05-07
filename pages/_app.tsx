@@ -1,7 +1,6 @@
 import '@/styles/globals.css';
 import type { AppProps } from 'next/app';
 import { NextUIProvider, createTheme } from '@nextui-org/react';
-import { ethers } from 'ethers';
 import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
 import {
 	ThirdwebProvider,

@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { Mailchain } from '@mailchain/sdk';
+import { Attachment, Mailchain } from '@mailchain/sdk';
 
 const secretRecoveryPhrase: string =
 	process.env.NEXT_PUBLIC_MAILCHAIN_SECRET_KEY || '';
@@ -10,6 +10,7 @@ type MailProps = {
 	subject: string;
 	contentText: string;
 	contentHtml: string;
+	attachment?: Attachment;
 };
 
 export default async function handler(
@@ -32,6 +33,7 @@ export default async function handler(
 					text: props.contentText,
 					html: props.contentHtml,
 				},
+				attachments: props.attachment ? [props.attachment] : [],
 			});
 
 			if (error) {
