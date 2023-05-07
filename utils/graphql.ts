@@ -1,4 +1,5 @@
 import { gql } from '@apollo/client/core';
+import { useQuery } from '@apollo/client/react';
 
 export const PROPOSAL_DETAILS = gql`
 	query GetProposal($proposalId: String) {

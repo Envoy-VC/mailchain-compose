@@ -10,6 +10,7 @@ import {
 	Spacer,
 	FormElement,
 	Loading,
+	Dropdown,
 } from '@nextui-org/react';
 import Image from 'next/image';
 const Hash = require('ipfs-only-hash');
@@ -19,13 +20,15 @@ import { useQuery } from '@apollo/client/react';
 import { Preview } from '@/components/layout/icons';
 import mailbox from '@/assets/icons/mailbox.svg';
 import { ModalState } from '@/types/modal';
-import { FormProps } from './EmailModal';
+import { FormProps } from '@/types/modal';
+import { Receivers } from '@/utils/config';
 
 interface Props {
 	state: ModalState;
 	setState: React.Dispatch<React.SetStateAction<ModalState>>;
 	form: FormProps;
 	data: any;
+	recipients: React.MutableRefObject<Receivers>;
 	error: React.MutableRefObject<string>;
 }
 
@@ -36,6 +39,13 @@ const ComposeModal = (props: Props) => {
 	});
 
 	const [isLoading, setIsLoading] = React.useState<boolean>(false);
+
+	const [selected, setSelected] = React.useState(new Set(['followers']));
+
+	const selectedValue = React.useMemo(
+		() => Array.from(selected).join(', ').replaceAll('_', ' '),
+		[selected]
+	);
 
 	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		if (e.target.files) {
@@ -52,7 +62,6 @@ const ComposeModal = (props: Props) => {
 					name: fileDetails.name,
 					content: fileBuffer,
 				};
-				console.log(props.form.attachment);
 			};
 			reader.readAsDataURL(e.target.files[0]);
 		}
@@ -61,17 +70,20 @@ const ComposeModal = (props: Props) => {
 	const handleSubmit = async () => {
 		try {
 			setIsLoading(true);
-			await refetch({ proposalId: props.form.proposalId })
-				.then((res) => {
-					if (res.data?.proposal !== null) {
-						props.data.current = res.data?.proposal;
-					} else {
-						throw new Error('Proposal not found');
-					}
-				})
-				.catch((error) => {
-					throw new Error(error.message);
-				});
+			props.recipients.current = selectedValue as any;
+			if (selectedValue === 'followers') {
+				await refetch({ proposalId: props.form.proposalId })
+					.then((res) => {
+						if (res.data?.proposal !== null) {
+							props.data.current = res.data?.proposal;
+						} else {
+							throw new Error('Proposal not found');
+						}
+					})
+					.catch((error) => {
+						throw new Error(error.message);
+					});
+			}
 			props.setState('preview');
 		} catch (error: any) {
 			props.error.current = error.toString().slice(6) as string;
@@ -106,16 +118,16 @@ const ComposeModal = (props: Props) => {
 					<Grid.Container direction='column' className='gap-[8px]'>
 						<Grid>
 							<Input
-								aria-label='From'
-								labelLeft={<div className='min-w-[84px]'>From</div>}
-								placeholder='vitalik.eth@ens.mailchain.com'
+								aria-label='Space'
+								labelLeft={<div className='min-w-[84px]'>Space</div>}
+								placeholder='envoy1084.eth'
 								width='100%'
-								initialValue={props.form.from ? props.form.from : ''}
+								initialValue={props.form.space ? props.form.space : ''}
 								type='text'
 								required={true}
 								animated={false}
 								onChange={(e: React.ChangeEvent<FormElement>) =>
-									(props.form.from = e.target.value)
+									(props.form.space = e.target.value)
 								}
 							/>
 						</Grid>
@@ -128,12 +140,36 @@ const ComposeModal = (props: Props) => {
 								initialValue={
 									props.form.proposalId ? props.form.proposalId : ''
 								}
-								required={true}
+								required={selectedValue === 'followers'}
 								animated={false}
 								onChange={(e: React.ChangeEvent<FormElement>) =>
 									(props.form.proposalId = e.target.value)
 								}
 							/>
+						</Grid>
+						<Grid>
+							<Dropdown>
+								<Dropdown.Button
+									flat
+									color='secondary'
+									css={{ tt: 'capitalize' }}
+								>
+									{selectedValue}
+								</Dropdown.Button>
+								<Dropdown.Menu
+									aria-label='Single selection actions'
+									color='secondary'
+									disallowEmptySelection
+									selectionMode='single'
+									selectedKeys={selected}
+									onSelectionChange={(keys) => setSelected(keys as any)}
+								>
+									<Dropdown.Item key='followers'>Followers</Dropdown.Item>
+									<Dropdown.Item key='members'>Members</Dropdown.Item>
+									<Dropdown.Item key='moderators'>Moderators</Dropdown.Item>
+									<Dropdown.Item key='admins'>Admins</Dropdown.Item>
+								</Dropdown.Menu>
+							</Dropdown>
 						</Grid>
 					</Grid.Container>
 

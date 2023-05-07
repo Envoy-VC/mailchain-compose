@@ -12,8 +12,7 @@ import { ROLE } from '@/utils/config';
 
 import NewProposalEmail from '@/components/email';
 
-import { ModalState } from '@/types/modal';
-import { FormProps } from './EmailModal';
+import { ModalState, NewProposalEmailProps, FormProps } from '@/types/modal';
 
 interface Props {
 	state: ModalState;
@@ -23,30 +22,24 @@ interface Props {
 	error: React.MutableRefObject<string>;
 }
 
-interface NewProposalEmailProps {
-	spaceLogo: string;
-	spaceName: string;
-	content: string;
-	proposalName: string;
-	proposalLink: string;
-	proposalEnd: number;
-}
-
-const PreviewModal = (props: Props) => {
+const ProposalModal = (props: Props) => {
 	const address = useAddress();
 	const signer = useSigner();
 	const sdk = ThirdwebSDK.fromSigner(signer as ethers.Signer);
-	const { refetch } = useQuery(GET_FOLLOWERS, {
+
+	const getFollowers = useQuery(GET_FOLLOWERS, {
 		variables: { spaceId: props.data?.space?.id, first: 1000, skip: 0 },
 		fetchPolicy: 'network-only',
 	});
 
-	const [isSending, setIsSending] = React.useState<boolean>(false);
 	const validateUser = useQuery(VALIDATE_USER, {
 		variables: { space: props.data?.space?.id },
 		fetchPolicy: 'network-only',
 	});
 
+	const [isSending, setIsSending] = React.useState<boolean>(false);
+
+	const message = 'Sign Message to Verify your Role in the Space';
 	const emailData: NewProposalEmailProps = {
 		spaceLogo: props.data.space?.avatar,
 		spaceName: props.data.space?.name,
@@ -55,13 +48,12 @@ const PreviewModal = (props: Props) => {
 		proposalLink: props.data?.link,
 		proposalEnd: props.data.end,
 	};
-	const message = 'Sign Message to Verify your Role in the Space';
 
 	const html = render(<NewProposalEmail {...emailData} />, {
 		pretty: true,
 	});
 
-	const validate = async (address: string) => {
+	const validateUserRoles = async (address: `0x${string}`) => {
 		let status = false;
 		await validateUser
 			.refetch({ space: props.data?.space?.id })
@@ -97,18 +89,10 @@ const PreviewModal = (props: Props) => {
 				message,
 				signature
 			);
-			let resolvedAddress: string | null;
-			if (props.form.from.endsWith('.eth')) {
-				resolvedAddress = await ethers
-					.getDefaultProvider()
-					.resolveName(props.form.from);
-			} else {
-				resolvedAddress = props.form.from;
-			}
-			if (recoveredAddress !== address)
-				throw new Error('Unable to Verify Wallet');
 			if (ROLE !== 'any') {
-				const isValid = await validate(recoveredAddress);
+				const isValid = await validateUserRoles(
+					recoveredAddress as `0x${string}`
+				);
 				if (!isValid)
 					throw new Error('User does not have the desired Role to send Emails');
 			}
@@ -120,11 +104,12 @@ const PreviewModal = (props: Props) => {
 
 			let addressList: string[] = [];
 			for (let i = 0; i < followerCount / 1000; i++) {
-				await refetch({
-					spaceId: props.data?.space?.id,
-					first: Math.min(1000, followerCount - i * 1000),
-					skip: i * 1000,
-				})
+				await getFollowers
+					.refetch({
+						spaceId: props.data?.space?.id,
+						first: Math.min(1000, followerCount - i * 1000),
+						skip: i * 1000,
+					})
 					.then(async (res) => {
 						if (res.data?.follows) {
 							res.data?.follows.map((follow: { follower: string }) => {
@@ -197,4 +182,4 @@ const PreviewModal = (props: Props) => {
 	);
 };
 
-export default PreviewModal;
+export default ProposalModal;

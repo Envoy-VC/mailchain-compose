@@ -35,7 +35,7 @@ const SuccessModal = (props: Props) => {
 					color='primary'
 					size='lg'
 					iconRight={null}
-					onClick={() => {
+					onPress={() => {
 						props.setOpen(false);
 						setTimeout(() => {
 							props.setState('compose');

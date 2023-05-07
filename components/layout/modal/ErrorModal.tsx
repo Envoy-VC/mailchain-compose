@@ -36,7 +36,7 @@ const ErrorModal = (props: Props) => {
 					color='primary'
 					size='lg'
 					iconRight={null}
-					onClick={() => {
+					onPress={() => {
 						props.setState('compose');
 					}}
 				>

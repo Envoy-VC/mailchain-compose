@@ -1,23 +1,24 @@
 import React from 'react';
-import { ComposeModal, PreviewModal, SuccessModal, ErrorModal } from '.';
-import { ModalState } from '@/types/modal';
 import { Modal, Button } from '@nextui-org/react';
-import { Compose } from '@/components/layout/icons';
 import { useAddress } from '@thirdweb-dev/react';
-import { Attachment } from '@mailchain/sdk';
 
-export interface FormProps {
-	from: string;
-	proposalId: string;
-	subject: string;
-	body: string;
-	attachment?: Attachment;
-}
+import { Compose } from '@/components/layout/icons';
+import {
+	ComposeModal,
+	ProposalModal,
+	SuccessModal,
+	ErrorModal,
+	MarkdownModal,
+} from '.';
+
+import { FormProps, ModalState } from '@/types/modal';
+import { Receivers } from '@/utils/config';
+import { Recipients } from '../../../utils/config';
 
 const EmailModal = () => {
 	const address = useAddress();
 	const form = React.useRef<FormProps>({
-		from: '',
+		space: '',
 		proposalId: '',
 		subject: '',
 		body: '',
@@ -25,11 +26,12 @@ const EmailModal = () => {
 	const errorMessage = React.useRef<string>('');
 	const [modalState, setModalState] = React.useState<ModalState>('compose');
 	const emailData = React.useRef<any>();
+	const receivers = React.useRef<Receivers>('followers');
 	const [isOpen, setOpen] = React.useState<boolean>(false);
 	const handler = (value: boolean) => setOpen(value);
 	const resetForm = () => {
 		form.current = {
-			from: '',
+			space: '',
 			proposalId: '',
 			subject: '',
 			body: '',
@@ -64,16 +66,27 @@ const EmailModal = () => {
 								setState={setModalState}
 								form={form.current}
 								data={emailData}
+								recipients={receivers}
 								error={errorMessage}
 							/>
 						)}
-						{modalState == 'preview' && (
-							<PreviewModal
+						{modalState === 'preview' && receivers.current === 'followers' && (
+							<ProposalModal
 								state={modalState}
 								setState={setModalState}
 								data={emailData.current}
 								form={form.current}
 								error={errorMessage}
+							/>
+						)}
+
+						{modalState === 'preview' && receivers.current !== 'followers' && (
+							<MarkdownModal
+								state={modalState}
+								setState={setModalState}
+								form={form.current}
+								error={errorMessage}
+								recipients={receivers.current}
 							/>
 						)}
 						{modalState == 'success' && (
