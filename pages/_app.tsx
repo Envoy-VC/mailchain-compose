@@ -30,12 +30,12 @@ export default function App({ Component, pageProps }: AppProps) {
 				metamaskWallet(),
 				coinbaseWallet(),
 				walletConnect({
-					projectId: 'YOUR_PROJECT_ID', // optional
+					projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '',
 				}),
 
 				safeWallet(),
 				paperWallet({
-					clientId: 'YOUR_CLIENT_ID', // required
+					clientId: process.env.NEXT_PUBLIC_PAPER_CLIENT_ID || '',
 				}),
 			]}
 			activeChain='ethereum'
